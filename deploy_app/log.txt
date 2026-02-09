@@ -1,0 +1,13 @@
+--- System Report ---
+Date and Time:
+Mon Feb  9 04:16:32 AM UTC 2026
+Disk Usage:
+Filesystem                         Size  Used Avail Use% Mounted on
+overlay                             95G   55G   41G  58% /
+tmpfs                               64M     0   64M   0% /dev
+/dev/sda1                           95G   55G   41G  58% /root
+/dev/disk/by-id/google-home-part1  4.8G 1004K  4.6G   1% /home
+/dev/root                          2.0G  1.2G  760M  62% /usr/lib/modules
+shm                                 64M     0   64M   0% /dev/shm
+Current User:
+priyanshu_garhwali_123

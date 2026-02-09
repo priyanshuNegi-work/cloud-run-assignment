@@ -20,7 +20,7 @@ It demonstrates how to containerize a Python Flask application and deploy it to 
 
 ## Live Demo
 You can view the running application here:
-[https://priyanshu-negi-142870289640.us-central1.run.app/]
+[Live](https://priyanshu-negi-142870289640.us-central1.run.app/)
 
 ## Deployment Command
 For reference, the app was deployed using:

@@ -1,6 +1,7 @@
 import os
 import time
 from flask import Flask, jsonify
+from flask import render_template
 import threading
 
 
@@ -61,17 +62,58 @@ def read_load_average():
     }
 
 
+# def read_memory_info():
+#     meminfo = {}
+
+#     with open("/proc/meminfo", "r") as f:
+#         for line in f:
+#             key, value = line.split(":")
+#             meminfo[key] = int(value.strip().split()[0])
+
+#     total_kb = meminfo["MemTotal"]
+#     available_kb = meminfo["MemAvailable"]
+#     used_kb = total_kb - available_kb
+
+#     return {
+#         "total_mb": round(total_kb / 1024, 2),
+#         "available_mb": round(available_kb / 1024, 2),
+#         "used_mb": round(used_kb / 1024, 2)
+#     }
+
+
 def read_memory_info():
     meminfo = {}
 
+    # Read the raw file
     with open("/proc/meminfo", "r") as f:
         for line in f:
-            key, value = line.split(":")
-            meminfo[key] = int(value.strip().split()[0])
+            parts = line.split(":")
+            if len(parts) == 2:
+                key = parts[0].strip()
+                # Extract value in kB
+                try:
+                    value = int(parts[1].strip().split()[0])
+                    meminfo[key] = value
+                except ValueError:
+                    continue
 
-    total_kb = meminfo["MemTotal"]
-    available_kb = meminfo["MemAvailable"]
-    used_kb = total_kb - available_kb
+    # 1. Get the Raw Numbers (in kB)
+    total_kb = meminfo.get("MemTotal", 1)
+    free_kb = meminfo.get("MemFree", 0)
+    buffers_kb = meminfo.get("Buffers", 0)
+    cached_kb = meminfo.get("Cached", 0)
+    
+    # 2. Calculate "Real" Used Memory
+    # Linux Formula: Used = Total - Free - Buffers - Cached
+    # (Because Buffers/Cached are technically "freeable" if apps need them)
+    used_kb = total_kb - free_kb - buffers_kb - cached_kb
+    
+    # ensure we don't return negative numbers (edge case)
+    if used_kb < 0:
+        used_kb = 0
+
+    # 3. Calculate Available (The inverse of Used)
+    available_kb = total_kb - used_kb
 
     return {
         "total_mb": round(total_kb / 1024, 2),
@@ -143,8 +185,8 @@ background_sampler.start()
 # -------------------------------
 
 @app.route("/")
-def hello_world():
-    return "Hello from Cloud Run! System check complete."
+def home():
+    return render_template("index.html")
 
 
 @app.route("/analyze")
@@ -173,7 +215,8 @@ def analyze_system():
     cpu_count = os.cpu_count() or 1
 
 
-    cpu_utilization_ratio = cpu_usage_percent / (cpu_count * 100)
+    # cpu_utilization_ratio = cpu_usage_percent / (cpu_count * 100)
+    cpu_utilization_ratio = cpu_usage_percent / 100
 
 
     # ---- Memory Usage Calculation ----
@@ -189,9 +232,36 @@ def analyze_system():
     ) * 100
 
 
-    # ---- Health Score ----
-    average_load = (cpu_usage_percent + memory_usage_percent) / 2
-    health_score = max(0, 100 - average_load)
+    # # ---- Health Score ----
+    # average_load = (cpu_usage_percent + memory_usage_percent) / 2
+    # health_score = max(0, 100 - average_load)
+
+
+    # ---- Health Score (New Smart Logic) ----
+    score = 100
+
+    # 1. CPU Penalty
+    # We only punish if CPU spikes above 50%
+    if cpu_usage_percent > 50:
+        # Subtract 1 point for every 2% over the limit
+        score -= (cpu_usage_percent - 50) * 0.5 
+
+    # 2. Memory Penalty
+    # RAM is meant to be used! We only punish if it's > 75% full.
+    if memory_usage_percent > 75:
+        # Subtract 2 points for every 1% over the limit (High risk)
+        score -= (memory_usage_percent - 75) * 2
+    
+    # 3. Load Average Penalty (The "Traffic Jam" Factor)
+    # If the 1-minute load is higher than the number of cores, the CPU is backed up.
+    load_1m = snapshot["load_average"]["last_1_min"]
+    if load_1m > cpu_count:
+        score -= 20  # Immediate 20 point penalty for CPU bottleneck
+
+    # Ensure score stays between 0 and 100
+    health_score = max(0, min(100, round(score, 1)))
+
+
 
     # ---- Message ----
     if health_score > 80:

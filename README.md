@@ -1,24 +1,24 @@
-# 🚀 Cloud Run System Monitor (Manual Kernel Reader)
+# Cloud Run System Monitor (Manual Kernel Reader)
 
 A full-stack system monitoring dashboard deployed on **Google Cloud Run**. 
 Unlike standard monitoring tools that rely on libraries like `psutil`, this project **manually reads the Linux Kernel's system files** (`/proc/`) to extract real-time metrics from the host machine.
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 1. 🧠 Manual Kernel Discovery (No Libraries)
+### 1. Manual Kernel Discovery (No Libraries)
 Instead of using high-level abstractions, this app reads raw system files directly:
 * **CPU Load:** Parses `/proc/loadavg` to get 1m, 5m, and 15m load averages.
 * **Memory Usage:** Parses `/proc/meminfo` to calculate "Real" Used vs. Available memory (handling Linux cache correctly).
 * **CPU Stats:** Parses `/proc/stat` to calculate precise CPU usage percentages using delta ticks.
 
-### 2. ⚡ Real-Time Dashboard
+### 2. Real-Time Dashboard
 * **Frontend:** HTML5, CSS3 (Dark Mode), and Vanilla JavaScript.
 * **Backend:** Flask API serving JSON data.
 * **Live Updates:** The dashboard polls the `/analyze` endpoint every 2 seconds to update gauges and progress bars instantly.
 
-### 3. 🏥 Custom Health Score Algorithm
+### 3. Custom Health Score Algorithm
 A unique algorithm that calculates a **0-100 Health Score**:
 * **Base Score:** 100
 * **Penalties:**
@@ -28,7 +28,7 @@ A unique algorithm that calculates a **0-100 Health Score**:
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 ├── README.md               # Project documentation
@@ -44,9 +44,14 @@ A unique algorithm that calculates a **0-100 Health Score**:
     └── templates/          # HTML Templates
         └── index.html      # Dashboard Structure
 ```
----
 
-## 🛠️ How to Run Locally
+---
+## Dashboard View 
+
+![Main Dashboard View](./images/Dashboard.png)
+
+
+## How to Run Locally
 
 You can test the entire application on your local machine using Docker.
 
@@ -68,7 +73,7 @@ docker run -p 8080:8080 system-monitor
 
 ---
 
-## ☁️ Deployment (Google Cloud Run)
+## Deployment (Google Cloud Run)
 
 This project is optimized for Serverless deployment.
 
@@ -84,7 +89,7 @@ Google Cloud will provide a live URL (e.g., `https://priyanshu-negi-xyz.asia-sou
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 ### `GET /analyze`
 
@@ -127,7 +132,7 @@ Returns the raw system metrics and health analysis.
 
 ---
 
-## 🧠 Engineering Insights (Why read `/proc`?)
+## Engineering Insights (Why read `/proc`?)
 
 When running inside a **Docker Container**, standard tools often report the *Container's* limits, not the *Host's* reality.
 
